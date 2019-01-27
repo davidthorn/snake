@@ -6,20 +6,35 @@
     color: white;
 }
 
-.mainbody {
-    background: #222;
+body {
     width: 100vw;
     height: 100vh;
+    display: flex;
+    justify-content: stretch;
+    align-items: stretch;
+    background: #222;
+    flex-direction: column;
+}
+
+.wrapper {
+    background: green;
+    flex: 1;
+    display: flex;
+    justify-content: stretch;
+    align-items: stretch;
+    border: 1px solid #ffffff;
+}
+
+.mainbody {
+    background: #222;
+    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: stretch;
 }
 
-body div {
-    display: flex;
-    flex: 1;
-}
+
 
 .header {
     display: flex;
@@ -38,7 +53,7 @@ body div {
 .app-name {
     flex: 0.2;
     color: white;
-    font-size: 1.4em;
+    font-size: 1rem;
     display: flex;
     justify-content: flex-start;
     align-items: center;
@@ -46,7 +61,7 @@ body div {
 }
 
 .app-data {
-    font-size: 1.4em;
+    font-size: 1rem;
     flex: 0.8;
     display: flex;
     justify-content: flex-end;
@@ -56,7 +71,7 @@ body div {
 
 
 .app-difficulty {
-    font-size: 1.0em;
+    font-size: 1rem;
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -71,7 +86,7 @@ body div {
 }
 
 #app-difficulty-num {
-    font-size: 1.0em;
+    font-size: 1rem;
     justify-content: flex-start;
     align-items: center;
     text-align:  left;
@@ -79,7 +94,7 @@ body div {
 }
 
 .app-score {
-    font-size: 1.0em;
+    font-size: 1rem;
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -90,7 +105,7 @@ body div {
 }
 
 #app-score-num {
-    font-size: 1.0em;
+    font-size: 1rem;
     justify-content: flex-start;
     align-items: center;
     text-align:  left;
@@ -102,14 +117,14 @@ body div {
 }
 
 .app-lives {
-    font-size: 1.0em;
+    font-size: 1rem;
     display: flex;
     justify-content: flex-end;
     align-items: center;
 }
 
 #app-lives-num {
-    font-size: 1.0em;
+    font-size: 1rem;
     justify-content: flex-start;
     align-items: center;
     text-align:  left;

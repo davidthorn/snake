@@ -15,8 +15,8 @@ const FILLED_COLOR = '#1fad1a'
 const GAME_COLOR = '#222'
 const FOOD_COLOR = 'orange'
 const GAME_OVER_COLOR = 'red'
-const NUMBER_COLUMNS: number = 75;
-const NUMBER_ROWS: number = 75;
+let NUMBER_COLUMNS: number = 75;
+let NUMBER_ROWS: number = 75;
 let game: SnakeGame;
 
 interface Snake {
@@ -167,7 +167,7 @@ class SnakeGame implements Game {
     }
 
     game = new SnakeGame()
-    game.start(NUMBER_ROWS, NUMBER_COLUMNS,  TOTAL_LIVES)
+
 
     const draw = () => {
         updateCanvas(container() , canvas() , context(), game)
@@ -268,6 +268,13 @@ class SnakeGame implements Game {
         canvas.id = GAME_CANVAS_ID
         container().appendChild(canvas)
         increaseDifficulty(DIFFICULTY_INCREMENT)
+        updateDimensions(container().getBoundingClientRect())
+        game.start(NUMBER_ROWS, NUMBER_COLUMNS, TOTAL_LIVES)
+    }
+
+    const updateDimensions = (bounds: { width: number , height: number }) => {
+        NUMBER_COLUMNS = bounds.width / 10
+        NUMBER_ROWS = bounds.height / 10
     }
 
     const increaseDifficulty = (amount: number) => {
@@ -285,6 +292,7 @@ class SnakeGame implements Game {
 
     window.onresize = () => {
         clearInterval(animationHandler)
+        updateDimensions(container().getBoundingClientRect())
         updateCanvas(container() , canvas() , context(), game)
     }
 
