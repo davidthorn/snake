@@ -52,8 +52,8 @@ interface Game {
     cols: number
     createFood(): Food
     createSnake(): Snake
-    restart(): Game
-    reset(): Game
+    restart(lives: number): Game
+    reset(lives: number): Game
 }
 
 class SnakeGame implements Game {
@@ -70,19 +70,20 @@ class SnakeGame implements Game {
         this.rows = rows
         this.cols = cols
         this.lives = lives
-        return this.restart()
+        return this.restart(lives)
     }
 
-    restart(): Game {
+    restart(lives: number = 1): Game {
+        this.lives = lives
         this.snake = this.createSnake()
         this.food = this.createFood()
         return this
     }
 
-    reset(): Game {
+    reset(lives: number = 1): Game {
         this.score = 0
-        this.lives = 1
-        return this.restart()
+        this.lives = lives
+        return this.restart(lives)
     }
 
     createFood(): Food {
@@ -176,6 +177,7 @@ class SnakeGame implements Game {
         difficulty().innerHTML = amount.toString()
     }
     const reset = () => {
+        DIFFICULTY = 0
         setScore(0)
         setLives(TOTAL_LIVES)
         setDifficulty(0)
@@ -214,7 +216,7 @@ class SnakeGame implements Game {
 
         if( newSnake.dead ) {
             clearInterval(animationHandler)
-            game = game.restart()
+            game = game.restart(game.lives)
             DIFFICULTY = 0
             increaseDifficulty(0)
             return 
@@ -282,8 +284,10 @@ class SnakeGame implements Game {
                 break
             case 82:  /// r key to restart
                 clearInterval(animationHandler)
-                game.restart()
+                reset()
+                game.reset(TOTAL_LIVES)
                 increaseDifficulty(0)
+                
                 break
             case 187: /// + key
                 increaseDifficulty(DIFFICULTY_INCREMENT)
@@ -301,7 +305,7 @@ const gameover = (game: Game , context: CanvasRenderingContext2D, dimensions: { 
     DIFFICULTY = 0
     context.fillStyle = GAME_OVER_COLOR
     context.fillRect(0, 0, dimensions.width, dimensions.height)
-    return game.reset()
+    return game.reset(TOTAL_LIVES)
 }
 
 /**
