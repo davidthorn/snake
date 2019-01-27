@@ -1,3 +1,11 @@
+const FRAME_RATE = 100
+let DIFFICULTY = 1
+const FILLED_COLOR = '#1fad1a'
+const GAME_COLOR = '#222'
+const FOOD_COLOR = 'orange'
+
+const NUMBER_COLUMNS: number = 75;
+const NUMBER_ROWS: number = 75;
 
 const createPixels = (): (container: HTMLDivElement,map: (p: Pixel) => Pixel) => Pixel[] => {
    
@@ -6,8 +14,10 @@ const createPixels = (): (container: HTMLDivElement,map: (p: Pixel) => Pixel) =>
     for(let x = 0; x <= NUMBER_COLUMNS; x++) {
         for(let y = 0; y <= NUMBER_ROWS; y++) {
             pixels.push({
-                x,
-                y,
+                point: {
+                    x,
+                    y
+                },
                 w: 0,
                 h: 0,
                 filled: false,
@@ -33,11 +43,29 @@ const createPixels = (): (container: HTMLDivElement,map: (p: Pixel) => Pixel) =>
 
 }
 
-const createSnake = (rows: number , cols: number): Snake => {
-    const body = [
-        {
+const createFood = (rows: number , cols: number): Food => {
+    let pixel = {
+        point: {
             x: Math.ceil(Math.random() * cols),
             y: Math.ceil(Math.random() * rows),
+        },
+        w: 0,
+        h: 0,
+        filled: true
+    }
+    return {
+        pixel,
+        eaten: false
+    }
+}
+
+const createSnake = (rows: number , cols: number): Snake => {
+    const _body = [
+        {
+            point: {
+                x: Math.ceil(Math.random() * cols),
+                y: Math.ceil(Math.random() * rows),
+            },
             w: 0,
             h: 0,
             filled: true
@@ -45,33 +73,36 @@ const createSnake = (rows: number , cols: number): Snake => {
     ]
     return {
         direction: 'RIGHT',
-        body,
-        getHead: () => {
-            return body[0]
-        }
+        body: _body,
+        path: [_body[0].point]
     }
 }
 
 interface Snake {
     body: Pixel[]
-    direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN'
-    getHead(): Pixel
+    direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN',
+    path: Point[]
+}
+
+interface Point {
+    x: number
+    y: number
 }
 
 interface Pixel {
-    x: number
-    y: number
+    point: Point
     w: number,
     h: number
     filled: boolean
     link?: Pixel
 }
 
-const FILLED_COLOR = '#1fad1a'
-const GAME_COLOR = '#222'
+let animationHandler: NodeJS.Timeout;
 
-const NUMBER_COLUMNS: number = 75;
-const NUMBER_ROWS: number = 75;
+interface Food {
+    pixel: Pixel,
+    eaten: boolean
+}
 
 (() => {
 
@@ -84,12 +115,11 @@ const NUMBER_ROWS: number = 75;
     const pixelsRepo = createPixels()
 
     let snake: Snake = createSnake(NUMBER_ROWS, NUMBER_COLUMNS)
-    let animationHandler: NodeJS.Timeout;
-
+    
+    let food = createFood(NUMBER_ROWS, NUMBER_COLUMNS)
 
     const draw = () => {
         updateCanvas(container)
-        console.log('jhere')
     }
 
     const updateCanvas = (container: HTMLDivElement) => {
@@ -105,18 +135,41 @@ const NUMBER_ROWS: number = 75;
             o.h = height / NUMBER_ROWS
             return o
         })
-        drawPixels(pixels, context) /// board
-        moveSnake(snake)
+
+        food.pixel.w = width / NUMBER_COLUMNS
+        food.pixel.h = height / NUMBER_ROWS
+        
+        //drawPixels(pixels, context) /// board
+        const { newFood , newSnake } = moveSnake(snake, food)
+        food = newFood
+        snake = newSnake
+        
+        if(newFood.eaten === true) {
+            
+        }
+
+        food = food.eaten === true ? createFood(NUMBER_ROWS, NUMBER_COLUMNS) : food
+
         drawPixels(snake.body, context) /// snake
-    
+        drawPixel(food.pixel, context, food.eaten === false ? FOOD_COLOR : GAME_COLOR)
+
     }  
 
     window.onload = () => {
         document.body.appendChild(container)
         container.appendChild(canvas)
+        increaseDifficulty()
+    }
+
+    const increaseDifficulty = () => {
+        if(animationHandler !== undefined) {
+            console.log('cleared interval')
+            clearInterval(animationHandler)
+        }
+        
         animationHandler = setInterval(() => {
             draw()
-        },60)
+        },FRAME_RATE - DIFFICULTY)
     }
 
     window.onresize = () => {
@@ -146,7 +199,6 @@ const NUMBER_ROWS: number = 75;
       
     }
 
-
 })()
 
 /**
@@ -156,15 +208,19 @@ const NUMBER_ROWS: number = 75;
  * @param {CanvasRenderingContext2D} canvas
  */
 const drawPixels = ( pixels: Pixel[] , canvas: CanvasRenderingContext2D )=> {
-
+    
     pixels.forEach(p => {
-        const color = p.x % 2 === 0 && p.y % 2 === 0 
-                        ? FILLED_COLOR : p.x % 2 !== 0 && p.y % 2 !== 0 
-                        ? FILLED_COLOR :  GAME_COLOR
-        canvas.fillStyle = p.filled === true ? FILLED_COLOR : GAME_COLOR
-        canvas.fillRect(p.x * p.w, p.y * p.h, p.w , p.h )
+        drawPixel(p , canvas , p.filled === true ? FILLED_COLOR : GAME_COLOR)
     })
 
+}
+
+const drawPixel = ( pixel: Pixel , canvas: CanvasRenderingContext2D, color: string )=> {
+    //canvas.clearRect(pixel.x * pixel.w, pixel.y * pixel.h, pixel.w , pixel.h )
+    const { x , y } = pixel.point
+    canvas.fillStyle = color
+
+    canvas.fillRect(x * pixel.w, y * pixel.h, pixel.w , pixel.h )
 }
 
 
@@ -178,39 +234,83 @@ const getSnake = (pixels: Pixel[]): Pixel[] => {
     return pixels.filter(i => i.filled === true)
 } 
 
-const moveSnake = (snake: Snake) => {
+
+/**
+ * Moves the snake one pixel in the direction which it is currently moving.
+ * If the snake hits the side then it re appears on the opposite side
+ *
+ * @param {Snake} snake
+ * @param {Food} food
+ * @returns {Food}
+ */
+const moveSnake = (snake: Snake, food: Food): { newSnake: Snake , newFood: Food } => {
+
+    //console.log('is food eaten' , snake)
+    let n_x: number = snake.body[0].point.x; // next x
+    let n_y: number = snake.body[0].point.y; // next y
+
+    const { x , y } = snake.body[0].point
 
     switch(snake.direction) {
         case 'RIGHT':
-            if(snake.getHead().x < (NUMBER_COLUMNS - 1)) {
-                snake.body[0].x += 1
+            if((x + DIFFICULTY) < (NUMBER_COLUMNS - 1)) {
+                n_x = x + DIFFICULTY
             } else {
-                snake.body[0].x = 0
+                n_x = 0
             }
         break;
         case 'LEFT':
-            if(snake.getHead().x > 0) {
-                snake.body[0].x -= 1
+            if((x - DIFFICULTY) > 0) {
+                n_x = x - DIFFICULTY
             } else {
-                snake.body[0].x = NUMBER_COLUMNS - 1
+                n_x = NUMBER_COLUMNS - DIFFICULTY
             }
         break;
         case 'UP':
-            if(snake.getHead().y > 0) {
-                snake.body[0].y -= 1
+            if((y -DIFFICULTY)  > 0) {
+                n_y = y - DIFFICULTY
             } else {
-                snake.body[0].y = NUMBER_ROWS - 1
+                n_y = NUMBER_ROWS - DIFFICULTY
             }
         break;
         case 'DOWN':
-            if(snake.getHead().y < NUMBER_ROWS - 1) {
-                snake.body[0].y += 1
+            if((y + DIFFICULTY) < NUMBER_ROWS - 1) {
+                n_y = y + DIFFICULTY
             } else {
-                snake.body[0].y = 0
+                n_y = 0
                 
             }
         break;
+        default:
+            throw new Error('this should not happen')
+    }
+   
+    snake.path.push(snake.body[0].point)
+
+    if(snake.path.filter(l => l.x === food.pixel.point.x && l.y === food.pixel.point.y).length > 0) {
+        food.eaten = true
+        snake.body = [food.pixel].concat(snake.body)
+        snake.path = []
+    } else {
+        snake.body[0] = {
+            ...snake.body[0],
+            point: {
+                x: n_x,
+                y: n_y
+            }
+        }
     }
 
-    
+    return {
+        newSnake: rebuildSnake(snake),
+        newFood: food
+    }
+}
+
+const rebuildSnake = (snake: Snake):Snake => {
+    snake.body = snake.body.map((pixel , index) => {
+        if(index === 0) return pixel
+        return snake.body[index - 1]
+    }) 
+    return snake
 }
