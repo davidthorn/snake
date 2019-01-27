@@ -1,5 +1,8 @@
 
 const TOTAL_LIVES = 5
+const NUMBER_OF_FOOD = 1
+let EATEN_FOOD = 0
+const EATEN_FOOD_BONUS = 10
 const DIFFICULTY_ID = 'app-difficulty-num'
 const SCORE_ID = 'app-score-num'
 const LIVES_ID = 'app-lives-num'
@@ -47,10 +50,10 @@ interface Game {
     score: number
     lives: number
     snake?: Snake 
-    food?: Food
+    food?: Food[]
     rows: number
     cols: number
-    createFood(): Food
+    createFood(food: Food[]): Food[]
     createSnake(): Snake
     restart(lives: number): Game
     reset(lives: number): Game
@@ -61,7 +64,7 @@ class SnakeGame implements Game {
     score: number = 0
     lives: number = 1
     snake?: Snake
-    food?: Food
+    food?: Food[]
     rows: number = 0
     cols: number = 0
     constructor() { }
@@ -76,7 +79,7 @@ class SnakeGame implements Game {
     restart(lives: number = 1): Game {
         this.lives = lives
         this.snake = this.createSnake()
-        this.food = this.createFood()
+        this.food = this.createFood([])
         return this
     }
 
@@ -86,24 +89,29 @@ class SnakeGame implements Game {
         return this.restart(lives)
     }
 
-    createFood(): Food {
+    createFood(food: Food[]): Food[] {
 
-        let x = Math.floor(Math.random() * this.cols - 1)
-        let y = Math.floor(Math.random() * this.rows - 1)
+        const items = [...Array(NUMBER_OF_FOOD)].map(() => {
+            let x = Math.floor(Math.random() * this.cols - 1)
+            let y = Math.floor(Math.random() * this.rows - 1)
+    
+            let pixel = {
+                point: {
+                    x: Math.abs(x),
+                    y: Math.abs(y),
+                },
+                w: 0,
+                h: 0,
+                filled: true
+            }
 
-        let pixel = {
-            point: {
-                x: Math.abs(x),
-                y: Math.abs(y),
-            },
-            w: 0,
-            h: 0,
-            filled: true
-        }
-        return {
-            pixel,
-            eaten: false
-        }
+            return {
+                pixel,
+                eaten: false
+            }
+        })
+
+        return food.concat(items)
     }
     
     createSnake(): Snake {
@@ -178,6 +186,7 @@ class SnakeGame implements Game {
     }
     const reset = () => {
         DIFFICULTY = 0
+        EATEN_FOOD = 0
         setScore(0)
         setLives(TOTAL_LIVES)
         setDifficulty(0)
@@ -201,10 +210,17 @@ class SnakeGame implements Game {
             return o
         })
 
-        food.pixel.w = width / NUMBER_COLUMNS
-        food.pixel.h = height / NUMBER_ROWS
+        game.food = food.map(l => {
+            l.pixel = {
+                ...l.pixel,
+                w: width / NUMBER_COLUMNS,
+                h: height / NUMBER_ROWS
+            }
+            return l
+            
+        })
 
-        const { newFood, newSnake } = moveSnake(snake, food)
+        const { newFood, newSnake, eatenFood } = moveSnake(snake, food)
 
         game.lives = newSnake.dead === true ? game.lives - 1 : game.lives
 
@@ -218,6 +234,7 @@ class SnakeGame implements Game {
             clearInterval(animationHandler)
             game = game.restart(game.lives)
             DIFFICULTY = 0
+            EATEN_FOOD = 0
             increaseDifficulty(0)
             return 
         }
@@ -226,17 +243,23 @@ class SnakeGame implements Game {
         
         game.food = newFood
         game.snake = newSnake
+        
+        if(eatenFood.length > 0) {
+            eatenFood.forEach(() => {
+                game.score += DIFFICULTY
+                EATEN_FOOD += 1
+                setScore(game.score)
+                increaseDifficulty(DIFFICULTY_INCREMENT)
+            })
+            game.food = game.createFood(newFood)
 
-        if(food.eaten === true) {
-            game.score += DIFFICULTY
-            setScore(game.score)
-            increaseDifficulty(DIFFICULTY_INCREMENT)
         }
 
-        game.food = food.eaten === true ? game.createFood() : food
-
         drawPixels(snake.body, context) /// snake
-        drawPixel(food.pixel, context, food.eaten === false ? FOOD_COLOR : GAME_COLOR)
+
+        game.food.forEach(foodItem => {
+            drawPixel(foodItem.pixel, context, foodItem.eaten === false ? FOOD_COLOR : GAME_COLOR)
+        })
 
     }
 
@@ -295,7 +318,6 @@ class SnakeGame implements Game {
         
             default: break
         }
-        console.log(e.keyCode)
     }
    
 })()
@@ -341,13 +363,12 @@ const drawPixel = (pixel: Pixel, canvas: CanvasRenderingContext2D, color: string
  * @param {Food} food
  * @returns {Food}
  */
-const moveSnake = (snake: Snake, food: Food): { newSnake: Snake, newFood: Food } => {
+const moveSnake = (snake: Snake, food: Food[]): { newSnake: Snake, newFood: Food[] , eatenFood: Food[] } => {
 
     let direction = snake.direction
     let hori = ['LEFT', 'RIGHT'].includes(direction) ? direction === 'LEFT' ? -1 : 1 : 0
     let vert = ['UP', 'DOWN'].includes(direction) ? direction === 'UP' ? -1 : 1 : 0
 
-    //console.log('is food eaten' , snake)
     let n_x: number = snake.body[0].point.x; // next x
     let n_y: number = snake.body[0].point.y; // next y
 
@@ -360,7 +381,8 @@ const moveSnake = (snake: Snake, food: Food): { newSnake: Snake, newFood: Food }
         snake.dead = true
         return {
             newSnake: snake,
-            newFood: food
+            newFood: food,
+            eatenFood: []
         }
     }
 
@@ -368,19 +390,26 @@ const moveSnake = (snake: Snake, food: Food): { newSnake: Snake, newFood: Food }
         snake.dead = true
         return {
             newSnake: snake,
-            newFood: food
+            newFood: food,
+            eatenFood: []
         }
     }
 
-    if (canSnakeEatFood(snake, food)) {
-        snake = eatFood(food , snake )
+    let canEat = food.filter( i => canSnakeEatFood(snake, i) )
+    food = food.filter(i => !canSnakeEatFood(snake, i))
+   
+    if (canEat.length >  0 ) {
+        canEat.forEach(f => {
+            snake = eatFood(f , snake )
+        })
     } else {
         snake = moveForward(newPoint , snake)
     }
 
     return {
         newSnake: snake,
-        newFood: food
+        newFood: food,
+        eatenFood: canEat
     }
 }
 
