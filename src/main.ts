@@ -318,12 +318,12 @@ class SnakeGame implements Game {
                 reset()
                 game.reset(TOTAL_LIVES)
                 increaseDifficulty(0)
-                
+
                 break
             case 187: /// + key
                 increaseDifficulty(DIFFICULTY_INCREMENT)
             break
-        
+            
             default: break
         }
     }
