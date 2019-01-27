@@ -1,0 +1,96 @@
+{
+  "name": "dql",
+  "version": "1.0.0",
+  "description": "A library which parses and validates the body of a http reqeuest to match specific criteria and more.",
+  "main": "src/main.ts",
+  "scripts": {
+    "pretest": "tsc",
+    "test": "nyc mocha",
+    "watch": "mocha-typescript-watch",
+    "prepare": "tsc",
+    "build": "tsc --build",
+    "serve:mock": "npm run build && node server.js",
+    "clean": "tsc --build --clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidthorn/dql.git"
+  },
+  "author": "David Thorn <david.thorn221278@googlemail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/davidthorn/dql/issues"
+  },
+  "homepage": "https://github.com/davidthorn/dql#readme",
+  "devDependencies": {
+    "@types/body-parser": "^1.17.0",
+    "@types/chai": "^4.1.7",
+    "@types/chai-http": "^3.0.5",
+    "@types/express": "^4.16.0",
+    "@types/lodash": "^4.14.119",
+    "@types/lodash.isboolean": "^3.0.4",
+    "@types/lodash.isnumber": "^3.0.4",
+    "@types/lodash.isstring": "^4.0.4",
+    "@types/mocha": "^5.2.5",
+    "body-parser": "^1.18.3",
+    "chai": "^4.2.0",
+    "chai-http": "^4.2.1",
+    "express": "^4.16.4",
+    "lodash.isboolean": "^3.0.3",
+    "lodash.isnumber": "^3.0.3",
+    "lodash.isstring": "^4.0.1",
+    "mocha": "^5.2.0",
+    "mocha-typescript": "^1.1.17",
+    "npm": "^6.5.0",
+    "nyc": "^13.1.0",
+    "source-map-support": "^0.5.10",
+    "typescript": "^3.2.2"
+  },
+  "dependencies": {
+    "@types/cors": "^2.8.4",
+    "@types/joi": "^14.0.1",
+    "@types/jsonwebtoken": "^8.3.0",
+    "@types/moment": "^2.13.0",
+    "@types/moment-timezone": "^0.5.10",
+    "@types/morgan": "^1.7.35",
+    "@types/node-fetch": "^2.1.4",
+    "@types/uuid": "^3.4.4",
+    "cors": "^2.8.5",
+    "joi": "^14.3.1",
+    "joi-date-extensions": "^1.2.0",
+    "jsonwebtoken": "^8.4.0",
+    "moment": "^2.23.0",
+    "moment-timezone": "^0.5.23",
+    "morgan": "^1.9.1",
+    "node-fetch": "^2.3.0",
+    "uuid": "^3.3.2"
+  },
+  "nyc": {
+    "check-coverage": true,
+    "lines": 20,
+    "statements": 20,
+    "functions": 20,
+    "branches": 20,
+    "include": [
+      "src/**/*.js"
+    ],
+    "exclude": [
+      "test/**/*.js"
+    ],
+    "reporter": [
+      "lcov",
+      "text-summary"
+    ],
+    "all": true
+  },
+  "firebase": {
+    "mode": "prod",
+    "dev": {
+      "url": "localhost",
+      "port": 3002
+    },
+    "prod": {
+      "url": "https://www.googleapis.com"
+    }
+  }
+}

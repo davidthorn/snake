@@ -1,0 +1,18 @@
+* {
+    margin: 0px;
+    padding: 0px;
+}
+
+body {
+    background: #222;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: stretch;
+    align-items: stretch;
+}
+
+body div {
+    display: flex;
+    flex: 1;
+}
