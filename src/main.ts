@@ -34,7 +34,7 @@ const createPixels = (): (container: HTMLDivElement,map: (p: Pixel) => Pixel) =>
 }
 
 const createSnake = (rows: number , cols: number): Snake => {
-    return [
+    const body = [
         {
             x: Math.ceil(Math.random() * cols),
             y: Math.ceil(Math.random() * rows),
@@ -43,9 +43,20 @@ const createSnake = (rows: number , cols: number): Snake => {
             filled: true
         }
     ]
+    return {
+        direction: 'RIGHT',
+        body,
+        getHead: () => {
+            return body[0]
+        }
+    }
 }
 
-type Snake = Pixel[]
+interface Snake {
+    body: Pixel[]
+    direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN'
+    getHead(): Pixel
+}
 
 interface Pixel {
     x: number
@@ -72,7 +83,14 @@ const NUMBER_ROWS: number = 75;
 
     const pixelsRepo = createPixels()
 
-    let snake: Pixel[] = createSnake(NUMBER_ROWS, NUMBER_COLUMNS)
+    let snake: Snake = createSnake(NUMBER_ROWS, NUMBER_COLUMNS)
+    let animationHandler: NodeJS.Timeout;
+
+
+    const draw = () => {
+        updateCanvas(container)
+        console.log('jhere')
+    }
 
     const updateCanvas = (container: HTMLDivElement) => {
         const { width, height } = container.getBoundingClientRect()
@@ -82,23 +100,50 @@ const NUMBER_ROWS: number = 75;
         context.fillRect(0, 0, width, height)
 
         let pixels = pixelsRepo(container, o => o)
-        snake = snake.map(o => ({ 
-            ...o,
-            w: width / NUMBER_COLUMNS,
-            h: height / NUMBER_ROWS
-         }))
+        snake.body = snake.body.map(o => {
+            o.w = width / NUMBER_COLUMNS
+            o.h = height / NUMBER_ROWS
+            return o
+        })
         drawPixels(pixels, context) /// board
-        drawPixels(snake, context) /// snake
+        moveSnake(snake)
+        drawPixels(snake.body, context) /// snake
+    
     }  
 
     window.onload = () => {
         document.body.appendChild(container)
         container.appendChild(canvas)
-        updateCanvas(container)
+        animationHandler = setInterval(() => {
+            draw()
+        },60)
     }
 
     window.onresize = () => {
+        clearInterval(animationHandler)
         updateCanvas(container)
+    }
+
+    window.onkeydown = (e) => {
+        switch(e.keyCode) {
+            case 27:
+            clearInterval(animationHandler)
+            break;
+            case 37:
+            snake.direction = 'LEFT'
+            break
+            case 38:
+            snake.direction = 'UP'
+            break
+            case 39:
+            snake.direction = 'RIGHT'
+            break
+            case 40:
+            snake.direction = 'DOWN'
+            break
+            default: break
+        }
+      
     }
 
 
@@ -132,3 +177,40 @@ const drawPixels = ( pixels: Pixel[] , canvas: CanvasRenderingContext2D )=> {
 const getSnake = (pixels: Pixel[]): Pixel[] => {
     return pixels.filter(i => i.filled === true)
 } 
+
+const moveSnake = (snake: Snake) => {
+
+    switch(snake.direction) {
+        case 'RIGHT':
+            if(snake.getHead().x < (NUMBER_COLUMNS - 1)) {
+                snake.body[0].x += 1
+            } else {
+                snake.body[0].x = 0
+            }
+        break;
+        case 'LEFT':
+            if(snake.getHead().x > 0) {
+                snake.body[0].x -= 1
+            } else {
+                snake.body[0].x = NUMBER_COLUMNS - 1
+            }
+        break;
+        case 'UP':
+            if(snake.getHead().y > 0) {
+                snake.body[0].y -= 1
+            } else {
+                snake.body[0].y = NUMBER_ROWS - 1
+            }
+        break;
+        case 'DOWN':
+            if(snake.getHead().y < NUMBER_ROWS - 1) {
+                snake.body[0].y += 1
+            } else {
+                snake.body[0].y = 0
+                
+            }
+        break;
+    }
+
+    
+}
