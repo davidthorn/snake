@@ -245,72 +245,35 @@ const getSnake = (pixels: Pixel[]): Pixel[] => {
  */
 const moveSnake = (snake: Snake, food: Food): { newSnake: Snake , newFood: Food } => {
 
+    let direction = snake.direction
+    let hori =  ['LEFT' , 'RIGHT' ].includes(direction) ? direction === 'LEFT' ? -1 : 1 : 0 
+    let vert =  ['UP' , 'DOWN' ].includes(direction) ? direction === 'UP' ? -1 : 1 : 0 
+
     //console.log('is food eaten' , snake)
     let n_x: number = snake.body[0].point.x; // next x
     let n_y: number = snake.body[0].point.y; // next y
 
-    const { x , y } = snake.body[0].point
-
-    switch(snake.direction) {
-        case 'RIGHT':
-            if((x + DIFFICULTY) < (NUMBER_COLUMNS - 1)) {
-                n_x = x + DIFFICULTY
-            } else {
-                n_x = 0
+    let head =  {
+        ...snake.body[0],
+        point: {
+            x: n_x + hori,
+            y: n_y + vert
             }
-        break;
-        case 'LEFT':
-            if((x - DIFFICULTY) > 0) {
-                n_x = x - DIFFICULTY
-            } else {
-                n_x = NUMBER_COLUMNS - DIFFICULTY
             }
-        break;
-        case 'UP':
-            if((y -DIFFICULTY)  > 0) {
-                n_y = y - DIFFICULTY
-            } else {
-                n_y = NUMBER_ROWS - DIFFICULTY
-            }
-        break;
-        case 'DOWN':
-            if((y + DIFFICULTY) < NUMBER_ROWS - 1) {
-                n_y = y + DIFFICULTY
-            } else {
-                n_y = 0
                 
-            }
-        break;
-        default:
-            throw new Error('this should not happen')
-    }
-   
-    snake.path.push(snake.body[0].point)
-
     if(snake.path.filter(l => l.x === food.pixel.point.x && l.y === food.pixel.point.y).length > 0) {
         food.eaten = true
-        snake.body = [food.pixel].concat(snake.body)
+        snake.body.unshift(food.pixel)
         snake.path = []
     } else {
-        snake.body[0] = {
-            ...snake.body[0],
-            point: {
-                x: n_x,
-                y: n_y
-            }
-        }
+        snake.body.unshift(head)
+        snake.body.pop()
+        snake.path.push(head.point)
     }
 
     return {
-        newSnake: rebuildSnake(snake),
+        newSnake: snake,
         newFood: food
     }
 }
 
-const rebuildSnake = (snake: Snake):Snake => {
-    snake.body = snake.body.map((pixel , index) => {
-        if(index === 0) return pixel
-        return snake.body[index - 1]
-    }) 
-    return snake
-}
