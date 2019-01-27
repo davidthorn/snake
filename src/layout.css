@@ -1,18 +1,129 @@
 * {
     margin: 0px;
     padding: 0px;
+    font-family: 'Courier New', Courier, monospace;
+    
+    color: white;
 }
 
-body {
-    background: #1fad1a;
+.mainbody {
+    background: #222;
     width: 100vw;
     height: 100vh;
     display: flex;
-    justify-content: stretch;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: stretch;
 }
 
 body div {
     display: flex;
     flex: 1;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
+    flex: 0.06;
+    border-bottom: 1px solid #ffffff;
+}
+
+.gameBody {
+    display: flex;
+    flex: 1;
+}
+
+.app-name {
+    flex: 0.2;
+    color: white;
+    font-size: 1.4em;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    text-indent: 20px;
+}
+
+.app-data {
+    font-size: 1.4em;
+    flex: 0.8;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+}
+
+
+.app-difficulty {
+    font-size: 1.0em;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.app-difficulty::after {
+    content: ": "
+}
+
+#app-difficulty-num::after {
+    content: " | "
+}
+
+#app-difficulty-num {
+    font-size: 1.0em;
+    justify-content: flex-start;
+    align-items: center;
+    text-align:  left;
+    padding: 0 8px 0 8px;
+}
+
+.app-score {
+    font-size: 1.0em;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.app-score::after {
+    content: ": "
+}
+
+#app-score-num {
+    font-size: 1.0em;
+    justify-content: flex-start;
+    align-items: center;
+    text-align:  left;
+    padding: 0 8px 0 8px;
+}
+
+#app-score-num::after {
+    content: " | "
+}
+
+.app-lives {
+    font-size: 1.0em;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+#app-lives-num {
+    font-size: 1.0em;
+    justify-content: flex-start;
+    align-items: center;
+    text-align:  left;
+    padding: 0 8px 0 8px;
+}
+
+.app-lives::after {
+    content: ": "
+}
+
+#app-lives-num::before {
+    content: "{ "
+}
+
+#app-lives-num::after {
+    content: " }"
 }

@@ -1,5 +1,12 @@
 
+const TOTAL_LIVES = 5
+const DIFFICULTY_ID = 'app-difficulty-num'
+const SCORE_ID = 'app-score-num'
+const LIVES_ID = 'app-lives-num'
+const GAME_BODY_ID = 'game-body'
+const GAME_CANVAS_ID = 'game-canvas'
 const FRAME_RATE = 100
+const DIFFICULTY_INCREMENT = 5
 let DIFFICULTY = 1
 const FILLED_COLOR = '#1fad1a'
 const GAME_COLOR = '#222'
@@ -37,25 +44,32 @@ interface Food {
 }
 
 interface Game {
+    score: number
+    lives: number
     snake?: Snake 
     food?: Food
     rows: number
     cols: number
     createFood(): Food
     createSnake(): Snake
+    restart(): Game
+    reset(): Game
 }
 
 class SnakeGame implements Game {
 
+    score: number = 0
+    lives: number = 1
     snake?: Snake
     food?: Food
     rows: number = 0
     cols: number = 0
     constructor() { }
 
-    start(rows: number , cols: number): Game {
+    start(rows: number , cols: number, lives: number): Game {
         this.rows = rows
         this.cols = cols
+        this.lives = lives
         return this.restart()
     }
 
@@ -65,11 +79,21 @@ class SnakeGame implements Game {
         return this
     }
 
+    reset(): Game {
+        this.score = 0
+        this.lives = 1
+        return this.restart()
+    }
+
     createFood(): Food {
+
+        let x = Math.floor(Math.random() * this.cols - 1)
+        let y = Math.floor(Math.random() * this.rows - 1)
+
         let pixel = {
             point: {
-                x: Math.floor(Math.random() * this.cols - 1),
-                y: Math.floor(Math.random() * this.rows - 1),
+                x: Math.abs(x),
+                y: Math.abs(y),
             },
             w: 0,
             h: 0,
@@ -109,19 +133,56 @@ class SnakeGame implements Game {
 
 (() => {
 
-    const container: HTMLDivElement = document.createElement('div')
-    const canvas: HTMLCanvasElement = document.createElement('canvas')
-    const context: CanvasRenderingContext2D = canvas.getContext('2d')!
-    container.appendChild(canvas)
-
-    game = new SnakeGame()
-    game.start(NUMBER_ROWS, NUMBER_COLUMNS)
-
-    const draw = () => {
-        updateCanvas(container, game)
+    const difficulty = (): HTMLElement => {
+        return document.getElementById(DIFFICULTY_ID)!
     }
 
-    const updateCanvas = (container: HTMLDivElement, game: Game ) => {
+    const score = (): HTMLElement => {
+        return document.getElementById(SCORE_ID)!
+    }
+
+    const lives = (): HTMLElement => {
+        return document.getElementById(LIVES_ID)!
+    }
+
+    const container = (): HTMLElement => {
+        return document.getElementById(GAME_BODY_ID)!
+    }
+
+    const context = (): CanvasRenderingContext2D => {
+        return canvas().getContext('2d')!
+    }
+
+    const canvas = (): HTMLCanvasElement => {
+        return document.getElementById(GAME_CANVAS_ID) as HTMLCanvasElement
+    }
+
+    game = new SnakeGame()
+    game.start(NUMBER_ROWS, NUMBER_COLUMNS,  TOTAL_LIVES)
+
+    const draw = () => {
+        updateCanvas(container() , canvas() , context(), game)
+    }
+
+    const setScore = (amount: number) => {
+        score().innerHTML = amount.toString()
+    }
+
+    const setLives = (amount: number) => {
+        lives().innerHTML = amount.toString()
+    }
+
+    const setDifficulty = (amount: number) => {
+        difficulty().innerHTML = amount.toString()
+    }
+    const reset = () => {
+        setScore(0)
+        setLives(TOTAL_LIVES)
+        setDifficulty(0)
+    }
+
+    const updateCanvas = (container: HTMLElement, canvas: HTMLCanvasElement , context: CanvasRenderingContext2D , game: Game ) => {
+        
         const { width, height } = container.getBoundingClientRect()
         canvas.width = width
         canvas.height = height
@@ -143,16 +204,31 @@ class SnakeGame implements Game {
 
         const { newFood, newSnake } = moveSnake(snake, food)
 
-        if (newSnake.dead) {
-            gameover(context, { width , height })
+        game.lives = newSnake.dead === true ? game.lives - 1 : game.lives
+
+        if (newSnake.dead && game.lives <= 0) {
+            game = gameover(game, context, { width , height })
+            reset()
             return
         }
 
+        if( newSnake.dead ) {
+            clearInterval(animationHandler)
+            game = game.restart()
+            DIFFICULTY = 0
+            increaseDifficulty(0)
+            return 
+        }
+
+        setLives(game.lives)
+        
         game.food = newFood
         game.snake = newSnake
 
         if(food.eaten === true) {
-            increaseDifficulty()
+            game.score += DIFFICULTY
+            setScore(game.score)
+            increaseDifficulty(DIFFICULTY_INCREMENT)
         }
 
         game.food = food.eaten === true ? game.createFood() : food
@@ -163,19 +239,20 @@ class SnakeGame implements Game {
     }
 
     window.onload = () => {
-        document.body.appendChild(container)
-        container.appendChild(canvas)
-        increaseDifficulty()
+        const canvas: HTMLCanvasElement = document.createElement('canvas')
+        canvas.id = GAME_CANVAS_ID
+        container().appendChild(canvas)
+        increaseDifficulty(DIFFICULTY_INCREMENT)
     }
 
-    const increaseDifficulty = (amount: number = 5) => {
+    const increaseDifficulty = (amount: number) => {
         if (animationHandler !== undefined) {
-            console.log('cleared interval')
             clearInterval(animationHandler)
             DIFFICULTY += amount
-            console.log(`DIFFICULTY: ${DIFFICULTY}`)
         }
 
+        setDifficulty(DIFFICULTY)
+        
         animationHandler = setInterval(() => {
             draw()
         }, FRAME_RATE - DIFFICULTY)
@@ -183,7 +260,7 @@ class SnakeGame implements Game {
 
     window.onresize = () => {
         clearInterval(animationHandler)
-        updateCanvas(container, game)
+        updateCanvas(container() , canvas() , context(), game)
     }
 
     window.onkeydown = (e) => {
@@ -203,26 +280,28 @@ class SnakeGame implements Game {
             case 40:
                 game.setDirection('DOWN')    
                 break
-            case 82:
+            case 82:  /// r key to restart
                 clearInterval(animationHandler)
                 game.restart()
-                increaseDifficulty()
+                increaseDifficulty(0)
                 break
-            case 187:
-                increaseDifficulty(5)
+            case 187: /// + key
+                increaseDifficulty(DIFFICULTY_INCREMENT)
             break
         
             default: break
         }
+        console.log(e.keyCode)
     }
    
 })()
 
-const gameover = (context: CanvasRenderingContext2D, dimensions: { width: number , height: number }) => {
+const gameover = (game: Game , context: CanvasRenderingContext2D, dimensions: { width: number , height: number }): Game => {
     clearInterval(animationHandler)
     DIFFICULTY = 0
     context.fillStyle = GAME_OVER_COLOR
     context.fillRect(0, 0, dimensions.width, dimensions.height)
+    return game.reset()
 }
 
 /**
