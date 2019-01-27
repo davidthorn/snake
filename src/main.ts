@@ -68,8 +68,8 @@ class SnakeGame implements Game {
     createFood(): Food {
         let pixel = {
             point: {
-                x: Math.ceil(Math.random() * this.cols),
-                y: Math.ceil(Math.random() * this.rows),
+                x: Math.floor(Math.random() * this.cols - 1),
+                y: Math.floor(Math.random() * this.rows - 1),
             },
             w: 0,
             h: 0,
@@ -85,8 +85,8 @@ class SnakeGame implements Game {
         const _body = [
             {
                 point: {
-                    x: Math.ceil(Math.random() * this.cols),
-                    y: Math.ceil(Math.random() * this.rows),
+                    x: Math.floor(Math.random() * this.cols - 1),
+                    y: Math.floor(Math.random() * this.rows - 1),
                 },
                 w: 0,
                 h: 0,
@@ -150,6 +150,11 @@ class SnakeGame implements Game {
 
         game.food = newFood
         game.snake = newSnake
+
+        if(food.eaten === true) {
+            increaseDifficulty()
+        }
+
         game.food = food.eaten === true ? game.createFood() : food
 
         drawPixels(snake.body, context) /// snake
@@ -163,10 +168,12 @@ class SnakeGame implements Game {
         increaseDifficulty()
     }
 
-    const increaseDifficulty = () => {
+    const increaseDifficulty = (amount: number = 5) => {
         if (animationHandler !== undefined) {
             console.log('cleared interval')
             clearInterval(animationHandler)
+            DIFFICULTY += amount
+            console.log(`DIFFICULTY: ${DIFFICULTY}`)
         }
 
         animationHandler = setInterval(() => {
@@ -201,17 +208,19 @@ class SnakeGame implements Game {
                 game.restart()
                 increaseDifficulty()
                 break
+            case 187:
+                increaseDifficulty(5)
+            break
+        
             default: break
         }
-
-        console.log(e.keyCode)
-
     }
    
 })()
 
 const gameover = (context: CanvasRenderingContext2D, dimensions: { width: number , height: number }) => {
     clearInterval(animationHandler)
+    DIFFICULTY = 0
     context.fillStyle = GAME_OVER_COLOR
     context.fillRect(0, 0, dimensions.width, dimensions.height)
 }
@@ -223,11 +232,9 @@ const gameover = (context: CanvasRenderingContext2D, dimensions: { width: number
  * @param {CanvasRenderingContext2D} canvas
  */
 const drawPixels = (pixels: Pixel[], canvas: CanvasRenderingContext2D) => {
-
     pixels.forEach(p => {
         drawPixel(p, canvas, p.filled === true ? FILLED_COLOR : GAME_COLOR)
     })
-
 }
 
 /**
